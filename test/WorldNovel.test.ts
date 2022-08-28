@@ -134,7 +134,7 @@ describe("WorldNovel", () => {
     });
 
     // This test takes a long time to run, do `it.skip` during dev
-    it.only("reverts if the book is full", async () => {
+    it.skip("reverts if the book is full", async () => {
       const { worldNovel } = await loadFixture(deployWorldNovelFixture);
 
       /**

@@ -23,6 +23,12 @@ struct Book {
   string prompt;
 }
 
+enum WorldNovelPeriod {
+  INITIALIZING,
+  WRITING,
+  VOTING
+}
+
 contract WorldNovel is Ownable {
   NovelToken public novelToken;
 
@@ -33,6 +39,8 @@ contract WorldNovel is Ownable {
 
   uint[MOVING_AVERAGE_SIZE] _contributionTimeDeltas;
   uint _previousContributionTime;
+
+  WorldNovelPeriod _currentPeriod;
 
   constructor(uint initialSupply, string memory initialPrompt) {
     novelToken = new NovelToken(initialSupply);
@@ -47,13 +55,17 @@ contract WorldNovel is Ownable {
       );
   }
 
-  function addBook(string memory prompt) public onlyOwner {
+  function addBook(string memory prompt) public onlyOwner onlyInitializing {
     address bookAddress = generateAddress();
-    Book storage firstBook = _books[bookAddress];
-    firstBook.prompt = prompt;
-    _books[bookAddress] = firstBook;
+    Book storage book = _books[bookAddress];
+    book.prompt = prompt;
+    _books[bookAddress] = book;
+    allBooks.push(bookAddress);
+
     _currentBookAddress = bookAddress;
     _currentSentenceIndex = 0;
+
+    _currentPeriod = WorldNovelPeriod.WRITING;
   }
 
   function initContributionTimes() private {
@@ -95,7 +107,7 @@ contract WorldNovel is Ownable {
   /**
    * @notice Adds a sentence to the current book
    */
-  function addSentence(string memory text) public {
+  function addSentence(string memory text) public onlyWriting {
     Book storage currentBook = _books[_currentBookAddress];
     require(_currentSentenceIndex < MAX_SENTENCES, "IS");
     require(bytes(text).length < MAX_SENTENCE_LENGTH, "TL");
@@ -120,7 +132,7 @@ contract WorldNovel is Ownable {
    * Uses a moving average of how fast people are contributing
    * to adjust the price to contribute
    */
-  function getCostToAddSentence() public view returns (uint) {
+  function getCostToAddSentence() public view onlyWriting returns (uint) {
     uint currentTimeAverage = getCurrentContributionTimeAverage();
 
     // Upper bound the cost to MAX_DELTA_BETWEEN_CONTRIBUTIONS
@@ -146,9 +158,23 @@ contract WorldNovel is Ownable {
 
     Book storage currentBook = _books[_currentBookAddress];
     Sentence storage sentence = currentBook.sentences[sentenceIndex];
-    sentence.votes += 1;
+    sentence.votes += numTokens;
 
     novelToken.transfer(msg.sender, address(this), numTokens);
+  }
+
+  function setCurrentPeriod(WorldNovelPeriod period) public onlyOwner {
+    _currentPeriod = period;
+  }
+
+  modifier onlyWriting() {
+    require(_currentPeriod == WorldNovelPeriod.WRITING, "OW");
+    _;
+  }
+
+  modifier onlyInitializing() {
+    require(_currentPeriod == WorldNovelPeriod.INITIALIZING, "OI");
+    _;
   }
 }
 
@@ -159,4 +185,6 @@ contract WorldNovel is Ownable {
  * TF: Transfer Failed
  * TL: Text is Too Long
  * OB: Out of bounds
+ * OW: Only in the Writing period
+ * OI: Only in the Initializing period
  */

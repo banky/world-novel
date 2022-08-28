@@ -29,6 +29,7 @@
     "typescript": ">=4.5.0"
   },
   "scripts": {
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "compile": "hardhat compile"
   }
 }

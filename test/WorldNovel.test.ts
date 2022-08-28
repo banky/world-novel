@@ -1,7 +1,12 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { NovelToken__factory } from "../typechain-types";
+
+enum WorldNovelPeriod {
+  INITIALIZING = 0,
+  WRITING,
+  VOTING,
+}
 
 describe("WorldNovel", () => {
   async function deployWorldNovelFixture() {
@@ -19,6 +24,41 @@ describe("WorldNovel", () => {
 
     return { worldNovel, owner, otherAccount, novelToken };
   }
+
+  describe("addBook", () => {
+    it("adds a book as expected", async () => {
+      const { worldNovel } = await loadFixture(deployWorldNovelFixture);
+
+      await worldNovel.setCurrentPeriod(WorldNovelPeriod.INITIALIZING);
+      await worldNovel.addBook("This is a prompt for a brand new book");
+      const book = await worldNovel.getCurrentBook();
+
+      expect(book.prompt).to.equal("This is a prompt for a brand new book");
+    });
+
+    it("reverts if the user is not the owner", async () => {
+      const { worldNovel, otherAccount } = await loadFixture(
+        deployWorldNovelFixture
+      );
+
+      await worldNovel.setCurrentPeriod(WorldNovelPeriod.INITIALIZING);
+      await expect(
+        worldNovel
+          .connect(otherAccount)
+          .addBook("This is a prompt for a brand new book")
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("reverts if the contract is not initializing", async () => {
+      const { worldNovel, otherAccount } = await loadFixture(
+        deployWorldNovelFixture
+      );
+
+      await expect(
+        worldNovel.addBook("This is a prompt for a brand new book")
+      ).to.be.revertedWith("OI");
+    });
+  });
 
   describe("getCurrentBook", () => {
     it("initializes with a valid book", async () => {
@@ -128,13 +168,53 @@ describe("WorldNovel", () => {
   });
 
   describe("getCurrentBook", () => {
-    it("Returns the current book", async () => {
+    it("returns the current book", async () => {
       const { worldNovel } = await loadFixture(deployWorldNovelFixture);
 
       const currentBook = await worldNovel.getCurrentBook();
       expect(currentBook.prompt).to.equal(
         "This is a prompt. Write a great story"
       );
+    });
+  });
+
+  describe("voteOnSentence", () => {
+    it("successfully votes on the targeted sentence", async () => {
+      const { worldNovel, owner, novelToken } = await loadFixture(
+        deployWorldNovelFixture
+      );
+      await worldNovel.addSentence("Hi, this is the first sentence");
+
+      const initialBalance = await novelToken.balanceOf(owner.address);
+      await worldNovel.voteOnSentence(0, 69);
+
+      const currentBook = await worldNovel.getCurrentBook();
+      const votes = currentBook.sentences[0].votes;
+      const newBalance = await novelToken.balanceOf(owner.address);
+
+      expect(votes).to.equal(69);
+      expect(initialBalance.sub(newBalance)).to.equal(69);
+    });
+
+    it("reverts if voting on a sentence that is out of bounds", async () => {
+      const { worldNovel } = await loadFixture(deployWorldNovelFixture);
+
+      await expect(worldNovel.voteOnSentence(1000, 69)).to.be.revertedWith(
+        "OB"
+      );
+    });
+
+    it("reverts if the user votes for more than they can afford", async () => {
+      const { worldNovel, otherAccount, novelToken } = await loadFixture(
+        deployWorldNovelFixture
+      );
+
+      // Give some $NOVEL to the other
+      await novelToken["transfer(address,uint256)"](otherAccount.address, 100);
+
+      await expect(
+        worldNovel.connect(otherAccount).voteOnSentence(0, 169)
+      ).to.be.revertedWith("IB");
     });
   });
 });

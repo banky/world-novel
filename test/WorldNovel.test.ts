@@ -93,6 +93,14 @@ describe("WorldNovel", () => {
 
       expect(costToAddSentence).to.be.equal(2);
     });
+
+    it("reverts if not in the writing period", async () => {
+      const { worldNovel } = await loadFixture(deployWorldNovelFixture);
+
+      await worldNovel.setCurrentPeriod(WorldNovelPeriod.VOTING);
+
+      await expect(worldNovel.getCostToAddSentence()).to.be.revertedWith("OW");
+    });
   });
 
   describe("addSentence", () => {
@@ -126,7 +134,7 @@ describe("WorldNovel", () => {
     });
 
     // This test takes a long time to run, do `it.skip` during dev
-    it.skip("reverts if the book is full", async () => {
+    it.only("reverts if the book is full", async () => {
       const { worldNovel } = await loadFixture(deployWorldNovelFixture);
 
       /**
@@ -138,7 +146,7 @@ describe("WorldNovel", () => {
 
       await expect(
         worldNovel.addSentence(`I am a new sentence that shouldn't fit`)
-      ).to.be.revertedWith("IS");
+      ).to.be.revertedWith("OW");
     });
 
     it("reverts if the sentence is too long", async () => {
@@ -164,6 +172,16 @@ describe("WorldNovel", () => {
           .connect(otherAccount)
           .addSentence("Hello, I am the first sentence")
       ).to.be.revertedWith("IB");
+    });
+
+    it("reverts if not in the writing period", async () => {
+      const { worldNovel } = await loadFixture(deployWorldNovelFixture);
+
+      await worldNovel.setCurrentPeriod(WorldNovelPeriod.VOTING);
+
+      await expect(
+        worldNovel.addSentence("Hello, I am the first sentence")
+      ).to.be.revertedWith("OW");
     });
   });
 
@@ -215,6 +233,16 @@ describe("WorldNovel", () => {
       await expect(
         worldNovel.connect(otherAccount).voteOnSentence(0, 169)
       ).to.be.revertedWith("IB");
+    });
+
+    it("reverts if the novel is still initializing", async () => {
+      const { worldNovel, otherAccount } = await loadFixture(
+        deployWorldNovelFixture
+      );
+
+      await worldNovel.setCurrentPeriod(WorldNovelPeriod.INITIALIZING);
+
+      await expect(worldNovel.voteOnSentence(0, 169)).to.be.revertedWith("NI");
     });
   });
 });

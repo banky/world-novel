@@ -45,7 +45,6 @@ contract WorldNovel is Ownable {
   constructor(uint initialSupply, string memory initialPrompt) {
     novelToken = new NovelToken(initialSupply);
     addBook(initialPrompt);
-    initContributionTimes();
   }
 
   function generateAddress() private view returns (address) {
@@ -66,6 +65,8 @@ contract WorldNovel is Ownable {
     _currentSentenceIndex = 0;
 
     _currentPeriod = WorldNovelPeriod.WRITING;
+
+    initContributionTimes();
   }
 
   function initContributionTimes() private {
@@ -108,8 +109,6 @@ contract WorldNovel is Ownable {
    * @notice Adds a sentence to the current book
    */
   function addSentence(string memory text) public onlyWriting {
-    Book storage currentBook = _books[_currentBookAddress];
-    require(_currentSentenceIndex < MAX_SENTENCES, "IS");
     require(bytes(text).length < MAX_SENTENCE_LENGTH, "TL");
 
     uint cost = getCostToAddSentence();
@@ -117,14 +116,21 @@ contract WorldNovel is Ownable {
 
     novelToken.transfer(msg.sender, address(this), cost);
 
+    Book storage currentBook = _books[_currentBookAddress];
     currentBook.sentences[_currentSentenceIndex] = Sentence(
-      msg.sender,
+      msg.sender, // Author
       text,
-      0
+      0 // Votes
     );
-    _currentSentenceIndex++;
 
     updateContributionTimes();
+
+    _currentSentenceIndex++;
+    bool isLastSentence = _currentSentenceIndex == MAX_SENTENCES;
+    if (isLastSentence) {
+      _currentPeriod = WorldNovelPeriod.VOTING;
+      _currentSentenceIndex = 0;
+    }
   }
 
   /**
@@ -152,7 +158,10 @@ contract WorldNovel is Ownable {
    * @param sentenceIndex The sentence index in the current book
    * @param numTokens The number of NovelToken to attach to vote
    */
-  function voteOnSentence(uint sentenceIndex, uint numTokens) public {
+  function voteOnSentence(uint sentenceIndex, uint numTokens)
+    public
+    notInitializing
+  {
     require(sentenceIndex < MAX_SENTENCES, "OB");
     require(novelToken.balanceOf(msg.sender) >= numTokens, "IB");
 
@@ -176,15 +185,20 @@ contract WorldNovel is Ownable {
     require(_currentPeriod == WorldNovelPeriod.INITIALIZING, "OI");
     _;
   }
+
+  modifier notInitializing() {
+    require(_currentPeriod != WorldNovelPeriod.INITIALIZING, "NI");
+    _;
+  }
 }
 
 /**
  * Error codes
- * IS: Insufficient Space to store sentence in book
  * IB: Insufficient Balance to perform transaction
  * TF: Transfer Failed
  * TL: Text is Too Long
  * OB: Out of bounds
  * OW: Only in the Writing period
  * OI: Only in the Initializing period
+ * NI: Only in the Not Initializing period
  */

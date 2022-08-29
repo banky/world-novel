@@ -10,8 +10,8 @@ uint constant MAX_DELTA_BETWEEN_CONTRIBUTIONS = 1000; // seconds
  * is called in quick succession
  */
 contract ContributionTimeManager {
-  uint[MOVING_AVERAGE_SIZE] private _contributionTimeDeltas;
-  uint private _previousContributionTime;
+  uint[MOVING_AVERAGE_SIZE] internal _contributionTimeDeltas;
+  uint internal _previousContributionTime;
 
   /**
    * @notice Initializes the _contributionTimeDeltas with large values

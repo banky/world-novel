@@ -98,4 +98,21 @@ describe("BookManager", () => {
       );
     });
   });
+
+  describe("getTotalVotes", () => {
+    it("gets the expected total number of votes", async () => {
+      const { bookManager } = await loadFixture(deployBookManagerFixture);
+      await bookManager.addSentence("Hi, this is the first sentence");
+      await bookManager.addSentence("Hi, this is the second sentence");
+      await bookManager.addSentence("Hi, this is the third sentence");
+
+      await bookManager.voteOnSentence(0, 10);
+      await bookManager.voteOnSentence(0, 20);
+      await bookManager.voteOnSentence(0, 30);
+
+      const totalVotes = await bookManager.getTotalVotes();
+
+      expect(totalVotes).to.equal(60);
+    });
+  });
 });

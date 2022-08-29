@@ -204,13 +204,79 @@ describe("WorldNovel", () => {
     });
 
     it("reverts if the novel is still initializing", async () => {
-      const { worldNovel, otherAccount } = await loadFixture(
-        deployWorldNovelFixture
-      );
+      const { worldNovel } = await loadFixture(deployWorldNovelFixture);
 
       await worldNovel.setCurrentPeriod(WorldNovelPeriod.INITIALIZING);
 
       await expect(worldNovel.voteOnSentence(0, 169)).to.be.revertedWith("NI");
+    });
+  });
+
+  describe("payout", () => {
+    it("correctly pays out the contributors", async () => {
+      const { worldNovel, otherAccount, novelToken } = await loadFixture(
+        deployWorldNovelFixture
+      );
+
+      await novelToken["transfer(address,uint256)"](otherAccount.address, 100);
+      await worldNovel
+        .connect(otherAccount)
+        .addSentence("This is a great sentence");
+      await worldNovel
+        .connect(otherAccount)
+        .addSentence("This is another great sentence");
+
+      await worldNovel.voteOnSentence(0, 10);
+      await worldNovel.voteOnSentence(0, 20);
+      await worldNovel.setCurrentPeriod(WorldNovelPeriod.VOTING);
+
+      await worldNovel.payout();
+      const otherAccountBalance = await novelToken.balanceOf(
+        otherAccount.address
+      );
+
+      expect(otherAccountBalance).to.equal(130);
+    });
+
+    it("reverts if not the owner", async () => {
+      const { worldNovel, otherAccount, novelToken } = await loadFixture(
+        deployWorldNovelFixture
+      );
+
+      await novelToken["transfer(address,uint256)"](otherAccount.address, 100);
+      await worldNovel
+        .connect(otherAccount)
+        .addSentence("This is a great sentence");
+      await worldNovel
+        .connect(otherAccount)
+        .addSentence("This is another great sentence");
+
+      await worldNovel.voteOnSentence(0, 10);
+      await worldNovel.voteOnSentence(0, 20);
+      await worldNovel.setCurrentPeriod(WorldNovelPeriod.VOTING);
+
+      await expect(
+        worldNovel.connect(otherAccount).payout()
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("reverts if not in the voting period", async () => {
+      const { worldNovel, otherAccount, novelToken } = await loadFixture(
+        deployWorldNovelFixture
+      );
+
+      await novelToken["transfer(address,uint256)"](otherAccount.address, 100);
+      await worldNovel
+        .connect(otherAccount)
+        .addSentence("This is a great sentence");
+      await worldNovel
+        .connect(otherAccount)
+        .addSentence("This is another great sentence");
+
+      await worldNovel.voteOnSentence(0, 10);
+      await worldNovel.voteOnSentence(0, 20);
+
+      await expect(worldNovel.payout()).to.be.revertedWith("OV");
     });
   });
 });

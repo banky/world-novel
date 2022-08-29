@@ -87,4 +87,15 @@ contract BookManager {
     Sentence storage sentence = currentBook.sentences[sentenceIndex];
     sentence.votes += numVotes;
   }
+
+  function getTotalVotes() public view returns (uint totalVotes) {
+    Book memory currentBook = getCurrentBook();
+    for (uint i = 0; i < MAX_SENTENCES; ++i) {
+      totalVotes += currentBook.sentences[i].votes;
+    }
+  }
+
+  function getNumSentences() internal pure returns (uint) {
+    return MAX_SENTENCES;
+  }
 }

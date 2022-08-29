@@ -7,10 +7,9 @@ import "./ContributionTimeManager.sol";
 import "./BookManager.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "hardhat/console.sol";
-
 uint constant MAX_SENTENCE_COST = 1000; // NovelToken
 uint constant SENTENCE_VOTING_COST = 1; // NovelToken
+uint constant NUM_PAYOUTS = 10;
 
 enum WorldNovelPeriod {
   INITIALIZING,
@@ -41,7 +40,7 @@ contract WorldNovel is Ownable, ContributionTimeManager, BookManager {
   {
     super.addBook(prompt);
 
-    _currentPeriod = WorldNovelPeriod.WRITING;
+    setCurrentPeriod(WorldNovelPeriod.WRITING);
     initContributionTimes();
   }
 
@@ -62,7 +61,7 @@ contract WorldNovel is Ownable, ContributionTimeManager, BookManager {
 
     isLastSentence = super.addSentence(text);
     if (isLastSentence) {
-      _currentPeriod = WorldNovelPeriod.VOTING;
+      setCurrentPeriod(WorldNovelPeriod.VOTING);
     } else {
       updateContributionTimes();
     }
@@ -95,8 +94,42 @@ contract WorldNovel is Ownable, ContributionTimeManager, BookManager {
     novelToken.transfer(msg.sender, address(this), numTokens);
   }
 
+  /**
+   * @notice Gets the current period of the WorldNovel contract
+   */
+  function getCurrentPeriod() public view returns (WorldNovelPeriod) {
+    return _currentPeriod;
+  }
+
+  /**
+   * @notice Sets the current period of the WorldNovel contract
+   */
   function setCurrentPeriod(WorldNovelPeriod period) public onlyOwner {
     _currentPeriod = period;
+  }
+
+  /**
+   * @notice Pays out all contributors with the tokens
+   * the contract has collected. This is done linearly with number of
+   * votes out of the total number of votes
+   */
+  function payout() public onlyOwner onlyVoting {
+    Book memory currentBook = getCurrentBook();
+    uint numSentences = getNumSentences();
+    uint totalVotes = getTotalVotes();
+
+    for (uint i = 0; i < numSentences; ++i) {
+      uint votes = currentBook.sentences[i].votes;
+      address author = currentBook.sentences[i].author;
+      uint numTokens = (votes * novelToken.balanceOf(address(this))) /
+        totalVotes;
+
+      if (votes > 0) {
+        novelToken.transfer(address(this), author, numTokens);
+      }
+    }
+
+    setCurrentPeriod(WorldNovelPeriod.INITIALIZING);
   }
 
   modifier onlyWriting() {
@@ -106,6 +139,11 @@ contract WorldNovel is Ownable, ContributionTimeManager, BookManager {
 
   modifier onlyInitializing() {
     require(_currentPeriod == WorldNovelPeriod.INITIALIZING, "OI");
+    _;
+  }
+
+  modifier onlyVoting() {
+    require(_currentPeriod == WorldNovelPeriod.VOTING, "OV");
     _;
   }
 
@@ -123,5 +161,6 @@ contract WorldNovel is Ownable, ContributionTimeManager, BookManager {
  * OB: Out of bounds
  * OW: Only in the Writing period
  * OI: Only in the Initializing period
- * NI: Only in the Not Initializing period
+ * OV: Only in the Voting period
+ * NI: Only while Not Initializing
  */

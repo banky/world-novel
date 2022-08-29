@@ -4,25 +4,13 @@ pragma solidity ^0.8.9;
 import "./NovelToken.sol";
 import "./Helpers.sol";
 import "./ContributionTimeManager.sol";
+import "./BookManager.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "hardhat/console.sol";
 
-uint constant MAX_SENTENCES = 1000;
-uint constant MAX_SENTENCE_LENGTH = 100;
 uint constant MAX_SENTENCE_COST = 1000; // NovelToken
 uint constant SENTENCE_VOTING_COST = 1; // NovelToken
-
-struct Sentence {
-  address author;
-  string text;
-  uint votes;
-}
-
-struct Book {
-  Sentence[MAX_SENTENCES] sentences;
-  string prompt;
-}
 
 enum WorldNovelPeriod {
   INITIALIZING,
@@ -30,63 +18,53 @@ enum WorldNovelPeriod {
   VOTING
 }
 
-contract WorldNovel is Ownable, ContributionTimeManager {
+contract WorldNovel is Ownable, ContributionTimeManager, BookManager {
   NovelToken public novelToken;
-
-  mapping(address => Book) _books;
-  address _currentBookAddress;
-  address[] public allBooks;
-  uint _currentSentenceIndex;
 
   WorldNovelPeriod _currentPeriod;
 
-  constructor(uint initialSupply, string memory initialPrompt) {
+  constructor(uint initialSupply, string memory initialPrompt)
+    BookManager(initialPrompt)
+  {
     novelToken = new NovelToken(initialSupply);
-    addBook(initialPrompt);
   }
 
   /**
-   * @notice Adds a book to the contract
+   * @notice Adds a book to the contract. The period is also updated to `WRITING`
    * @param prompt The prompt shown to users to adhere to
    */
-  function addBook(string memory prompt) public onlyOwner onlyInitializing {
-    address bookAddress = generateAddress();
-    Book storage book = _books[bookAddress];
-    book.prompt = prompt;
-    allBooks.push(bookAddress);
+  function addBook(string memory prompt)
+    public
+    override
+    onlyOwner
+    onlyInitializing
+  {
+    super.addBook(prompt);
 
-    _currentBookAddress = bookAddress;
-    _currentSentenceIndex = 0;
     _currentPeriod = WorldNovelPeriod.WRITING;
-
     initContributionTimes();
   }
 
   /**
    * @notice Adds a sentence to the current book
+   * @param text The text of the sentence being added
+   * @return isLastSentence
    */
-  function addSentence(string memory text) public onlyWriting {
-    require(bytes(text).length < MAX_SENTENCE_LENGTH, "TL");
-
+  function addSentence(string memory text)
+    public
+    override
+    onlyWriting
+    returns (bool isLastSentence)
+  {
     uint cost = getCostToAddSentence();
     require(novelToken.balanceOf(msg.sender) >= cost, "IB");
-
     novelToken.transfer(msg.sender, address(this), cost);
 
-    Book storage currentBook = _books[_currentBookAddress];
-    currentBook.sentences[_currentSentenceIndex] = Sentence(
-      msg.sender, // Author
-      text,
-      0 // Votes
-    );
-
-    updateContributionTimes();
-
-    _currentSentenceIndex++;
-    bool isLastSentence = _currentSentenceIndex == MAX_SENTENCES;
+    isLastSentence = super.addSentence(text);
     if (isLastSentence) {
       _currentPeriod = WorldNovelPeriod.VOTING;
-      _currentSentenceIndex = 0;
+    } else {
+      updateContributionTimes();
     }
   }
 
@@ -101,27 +79,18 @@ contract WorldNovel is Ownable, ContributionTimeManager {
   }
 
   /**
-   * @notice Gets the current book
-   */
-  function getCurrentBook() public view returns (Book memory) {
-    return _books[_currentBookAddress];
-  }
-
-  /**
    * @notice Vote on a sentence
    * @param sentenceIndex The sentence index in the current book
    * @param numTokens The number of NovelToken to attach to vote
    */
   function voteOnSentence(uint sentenceIndex, uint numTokens)
     public
+    override
     notInitializing
   {
-    require(sentenceIndex < MAX_SENTENCES, "OB");
     require(novelToken.balanceOf(msg.sender) >= numTokens, "IB");
 
-    Book storage currentBook = _books[_currentBookAddress];
-    Sentence storage sentence = currentBook.sentences[sentenceIndex];
-    sentence.votes += numTokens;
+    super.voteOnSentence(sentenceIndex, numTokens);
 
     novelToken.transfer(msg.sender, address(this), numTokens);
   }

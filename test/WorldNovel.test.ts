@@ -134,7 +134,7 @@ describe("WorldNovel", () => {
     });
 
     // This test takes a long time to run, do `it.skip` during dev
-    it.skip("reverts if the book is full", async () => {
+    it("reverts if the book is full", async () => {
       const { worldNovel } = await loadFixture(deployWorldNovelFixture);
 
       /**
@@ -147,19 +147,6 @@ describe("WorldNovel", () => {
       await expect(
         worldNovel.addSentence(`I am a new sentence that shouldn't fit`)
       ).to.be.revertedWith("OW");
-    });
-
-    it("reverts if the sentence is too long", async () => {
-      const { worldNovel } = await loadFixture(deployWorldNovelFixture);
-      const longSentence =
-        "Lorem ipsum dolor sit amet, consectetur adipiscing \
-        elit, sed do eiusmod tempor incididunt ut labore et \
-        dolore magna aliqua. Ut enim ad minim veniam, quis nostrud \
-        exercitation ullamco laboris nisi";
-
-      await expect(worldNovel.addSentence(longSentence)).to.be.revertedWith(
-        "TL"
-      );
     });
 
     it("reverts if user doesn't have enough $NOVEL", async () => {
@@ -185,17 +172,6 @@ describe("WorldNovel", () => {
     });
   });
 
-  describe("getCurrentBook", () => {
-    it("returns the current book", async () => {
-      const { worldNovel } = await loadFixture(deployWorldNovelFixture);
-
-      const currentBook = await worldNovel.getCurrentBook();
-      expect(currentBook.prompt).to.equal(
-        "This is a prompt. Write a great story"
-      );
-    });
-  });
-
   describe("voteOnSentence", () => {
     it("successfully votes on the targeted sentence", async () => {
       const { worldNovel, owner, novelToken } = await loadFixture(
@@ -212,14 +188,6 @@ describe("WorldNovel", () => {
 
       expect(votes).to.equal(69);
       expect(initialBalance.sub(newBalance)).to.equal(69);
-    });
-
-    it("reverts if voting on a sentence that is out of bounds", async () => {
-      const { worldNovel } = await loadFixture(deployWorldNovelFixture);
-
-      await expect(worldNovel.voteOnSentence(1000, 69)).to.be.revertedWith(
-        "OB"
-      );
     });
 
     it("reverts if the user votes for more than they can afford", async () => {

@@ -212,6 +212,17 @@ describe("WorldNovel", () => {
     });
   });
 
+  describe("getCurrentPeriod", () => {
+    it("gets the current period", async () => {
+      const { worldNovel } = await loadFixture(deployWorldNovelFixture);
+
+      await worldNovel.setCurrentPeriod(WorldNovelPeriod.VOTING);
+      const currentPeriod = await worldNovel.getCurrentPeriod();
+
+      expect(currentPeriod).to.equal(WorldNovelPeriod.VOTING);
+    });
+  });
+
   describe("payout", () => {
     it("correctly pays out the contributors", async () => {
       const { worldNovel, otherAccount, novelToken } = await loadFixture(

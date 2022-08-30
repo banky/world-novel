@@ -4,7 +4,10 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.7.3"
+    "@openzeppelin/contracts": "^4.7.3",
+    "next": "12.2.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.4.7",
@@ -19,7 +22,10 @@
     "@types/chai": "^4.2.0",
     "@types/mocha": "^9.1.0",
     "@types/node": ">=12.0.0",
+    "@types/react": "^18.0.17",
     "chai": "^4.2.0",
+    "eslint": "8.23.0",
+    "eslint-config-next": "12.2.5",
     "ethers": "^5.4.7",
     "hardhat": "^2.10.2",
     "hardhat-gas-reporter": "^1.0.8",
@@ -30,6 +36,10 @@
   },
   "scripts": {
     "test": "hardhat test",
-    "compile": "hardhat compile"
+    "compile": "hardhat compile",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   }
 }

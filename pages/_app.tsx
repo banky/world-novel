@@ -9,6 +9,7 @@ import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
 
 import "@rainbow-me/rainbowkit/styles.css";
+import "@reach/dialog/styles.css";
 import "../styles/globals.css";
 import { Header } from "./components/header";
 

@@ -1,5 +1,7 @@
 import { Dialog } from "@reach/dialog";
 import { ButtonHTMLAttributes, DetailedHTMLProps, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useContracts } from "../contract-context/contract-context";
 
 const CHARACTER_LIMIT = 100; // Get this value from the contract on load
 
@@ -65,6 +67,33 @@ const ConfirmDialog = ({
   isOpen: boolean;
   onDismiss: VoidFunction;
 }) => {
+  const { worldNovel } = useContracts();
+  const {
+    data: costToAddSentence,
+    isLoading, // TODO: Handle loading and error
+    isError,
+  } = useQuery("costToAddSentence", () => worldNovel.getCostToAddSentence());
+  const queryClient = useQueryClient();
+  const addSentenceMutation = useMutation(
+    async () => {
+      const transaction = await worldNovel.addSentence(text);
+      await transaction.wait();
+    },
+    {
+      onSuccess: () => {
+        console.log("Success mutating");
+        queryClient.invalidateQueries("currentSentences");
+      },
+    }
+  );
+
+  const cost = `Cost: ${costToAddSentence} $NOVEL`;
+
+  const onSubmit = () => {
+    addSentenceMutation.mutate();
+    onDismiss();
+  };
+
   return (
     <Dialog
       className="rounded-xl my-[30vh]"
@@ -77,10 +106,10 @@ const ConfirmDialog = ({
       </div>
       <button
         className="bg-purple-100 border-purple-500 border-2 rounded-xl py-1 px-4 mx-auto w-64 block"
-        onClick={onDismiss}
+        onClick={onSubmit}
       >
         <h1 className="text-2xl text-center">Submit</h1>
-        <p>Cost: 1 $NOVEL</p>
+        <p>{cost}</p>
       </button>
     </Dialog>
   );

@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { useProvider, useContract } from "wagmi";
+import { useProvider, useContract, useSigner } from "wagmi";
 import { WorldNovel } from "../../typechain-types";
 import { WORLD_NOVEL_CONTRACT_ADDRESS } from "../constants";
 import WorldNovelInterface from "../../artifacts/contracts/WorldNovel.sol/WorldNovel.json";
@@ -24,10 +24,11 @@ export const useContracts = () => {
 
 export const ContractsProvider = ({ children }: { children: ReactNode }) => {
   const provider = useProvider();
+  const { data: signer } = useSigner();
   const worldNovel = useContract<WorldNovel>({
     addressOrName: WORLD_NOVEL_CONTRACT_ADDRESS,
     contractInterface: WorldNovelInterface.abi,
-    signerOrProvider: provider,
+    signerOrProvider: signer ?? provider,
   });
 
   const contracts = {

@@ -23,13 +23,7 @@ const getChainConfig = () => {
       }),
     });
     console.log("provider", provider);
-    return configureChains(
-      [chain.hardhat],
-      [
-        provider,
-        // publicProvider(),
-      ]
-    );
+    return configureChains([chain.hardhat], [provider]);
   }
 
   return configureChains(

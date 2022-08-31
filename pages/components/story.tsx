@@ -1,5 +1,6 @@
 import { useQuery } from "react-query";
 import { useContracts } from "../contract-context/contract-context";
+import { removeTrailingPeriod } from "../helpers";
 
 export const Story = () => {
   return (
@@ -16,7 +17,9 @@ const StoryContent = () => {
     data: sentences,
     isLoading,
     isError,
-  } = useQuery("currentSentences", () => worldNovel.getCurrentSentences());
+  } = useQuery("currentSentences", async () =>
+    worldNovel.getCurrentSentences()
+  );
 
   if (isLoading) {
     return (
@@ -34,14 +37,18 @@ const StoryContent = () => {
     return <div>Could not load the story</div>;
   }
 
-  if (sentences[0].text === "") {
+  if (sentences[0][1] === "") {
     return <div>The book is currently empty. What will you write? 😃</div>;
   }
 
   return (
     <p>
       {sentences.map((sentence) => {
-        return sentence.text;
+        const text = sentence[1];
+        if (text === "") {
+          return text;
+        }
+        return `${removeTrailingPeriod(sentence[1])}. `;
       })}
     </p>
   );

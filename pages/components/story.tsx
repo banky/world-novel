@@ -1,43 +1,48 @@
+import { useQuery } from "react-query";
+import { useContracts } from "../contract-context/contract-context";
+
 export const Story = () => {
   return (
     <div className="bg-amber-100 border-amber-500 border-2 rounded-xl p-4 overflow-auto h-full">
       <h1 className="text-2xl text-center">The story</h1>
-      <p className="mb-4">
-        You are in command of British forces during the French and Indian War.
-        After your forces suffer a sound defeat at the Battle of Fort Bull,
-        rumors emerge among the British soldiers that the French are being led
-        by a woman with magical powers. You write it off as an imaginary
-        falsehood and continue strategizing with your fellow commanders until a
-        mysterious stranger bursts into your tent, asserting to be a witch
-        hunter. He tells you that the French have been bewitched by a woman who
-        claims dominion over all of the New World. He offers to help you defeat
-        this mystical warrior before she lays waste to the 13 British colonies
-        and becomes Empress of the Americas.
-      </p>
-      <p className="mb-4">
-        You are in command of British forces during the French and Indian War.
-        After your forces suffer a sound defeat at the Battle of Fort Bull,
-        rumors emerge among the British soldiers that the French are being led
-        by a woman with magical powers. You write it off as an imaginary
-        falsehood and continue strategizing with your fellow commanders until a
-        mysterious stranger bursts into your tent, asserting to be a witch
-        hunter. He tells you that the French have been bewitched by a woman who
-        claims dominion over all of the New World. He offers to help you defeat
-        this mystical warrior before she lays waste to the 13 British colonies
-        and becomes Empress of the Americas.
-      </p>
-      <p className="">
-        You are in command of British forces during the French and Indian War.
-        After your forces suffer a sound defeat at the Battle of Fort Bull,
-        rumors emerge among the British soldiers that the French are being led
-        by a woman with magical powers. You write it off as an imaginary
-        falsehood and continue strategizing with your fellow commanders until a
-        mysterious stranger bursts into your tent, asserting to be a witch
-        hunter. He tells you that the French have been bewitched by a woman who
-        claims dominion over all of the New World. He offers to help you defeat
-        this mystical warrior before she lays waste to the 13 British colonies
-        and becomes Empress of the Americas.
-      </p>
+      <StoryContent />
     </div>
+  );
+};
+
+const StoryContent = () => {
+  const { worldNovel } = useContracts();
+  const {
+    data: sentences,
+    isLoading,
+    isError,
+  } = useQuery("currentSentences", () => worldNovel.getCurrentSentences());
+
+  if (isLoading) {
+    return (
+      <div role="status" className="animate-pulse">
+        <div className="h-4 bg-amber-500 rounded-full w-full mb-4 opacity-10" />
+        <div className="h-4 bg-amber-500 rounded-full w-full mb-4 opacity-10" />
+        <div className="h-4 bg-amber-500 rounded-full w-full mb-4 opacity-10" />
+        <div className="h-4 bg-amber-500 rounded-full w-full mb-4 opacity-10" />
+        <div className="h-4 bg-amber-500 rounded-full w-full opacity-10" />
+      </div>
+    );
+  }
+
+  if (isError || sentences === undefined) {
+    return <div>Could not load the story</div>;
+  }
+
+  if (sentences[0].text === "") {
+    return <div>The book is currently empty. What will you write? 😃</div>;
+  }
+
+  return (
+    <p>
+      {sentences.map((sentence) => {
+        return sentence.text;
+      })}
+    </p>
   );
 };

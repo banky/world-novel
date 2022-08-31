@@ -31,9 +31,5 @@ const PromptContent = () => {
     return <div>Could not load the prompt</div>;
   }
 
-  return (
-    <>
-      <p className="">{prompt}</p>
-    </>
-  );
+  return <p className="">{prompt}</p>;
 };

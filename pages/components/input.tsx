@@ -47,7 +47,7 @@ const AddButton = (
   return (
     <button
       className="shrink-0 w-10 h-10 bg-purple-100 border-purple-500 border-2
-      rounded-full relative hover:rotate-6 ease-linear disabled:bg-gray-100 disabled:border-gray-500"
+      rounded-full relative hover:rotate-6 ease-linear disabled:bg-gray-100 disabled:border-gray-500 disabled:rotate-0"
       {...props}
     >
       <div className="absolute top-2 bottom-2 left-0 right-0 mx-auto w-0.5 rounded-sm bg-black" />
@@ -70,6 +70,7 @@ const ConfirmDialog = ({
       className="rounded-xl my-[30vh]"
       isOpen={isOpen}
       onDismiss={onDismiss}
+      aria-label="Confirm input"
     >
       <div className="bg-amber-100 border-amber-500 border-2 rounded-xl p-4 mb-4">
         {text}

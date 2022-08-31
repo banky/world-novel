@@ -98,4 +98,18 @@ contract BookManager {
   function getNumSentences() internal pure returns (uint) {
     return MAX_SENTENCES;
   }
+
+  function getCurrentPrompt() public view returns (string memory) {
+    Book memory currentBook = getCurrentBook();
+    return currentBook.prompt;
+  }
+
+  function getCurrentSentences()
+    public
+    view
+    returns (Sentence[MAX_SENTENCES] memory)
+  {
+    Book memory currentBook = getCurrentBook();
+    return currentBook.sentences;
+  }
 }

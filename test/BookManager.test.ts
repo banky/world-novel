@@ -115,4 +115,33 @@ describe("BookManager", () => {
       expect(totalVotes).to.equal(60);
     });
   });
+
+  describe("getCurrentPrompt", () => {
+    it("gets the current prompt", async () => {
+      const { bookManager } = await loadFixture(deployBookManagerFixture);
+
+      const currentPrompt = await bookManager.getCurrentPrompt();
+
+      expect(currentPrompt).to.equal(
+        "This is a prompt. Do with me as you please"
+      );
+    });
+  });
+
+  describe("getCurrentSentences", () => {
+    it("gets the current sentences", async () => {
+      const { bookManager, owner } = await loadFixture(
+        deployBookManagerFixture
+      );
+
+      await bookManager.addSentence("Hi, this is the first sentence");
+      const currentSentences = await bookManager.getCurrentSentences();
+
+      expect(currentSentences.length).to.equal(1000);
+      expect(currentSentences[0].author).to.equal(owner.address);
+      expect(currentSentences[0].text).to.equal(
+        "Hi, this is the first sentence"
+      );
+    });
+  });
 });

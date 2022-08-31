@@ -1,6 +1,12 @@
+import { useEffect } from "react";
+import { useProvider, useContract, useContractRead } from "wagmi";
+import { WorldNovel } from "../typechain-types";
 import { Input } from "./components/input";
 import { Prompt } from "./components/prompt";
 import { Story } from "./components/story";
+import { WORLD_NOVEL_CONTRACT_ADDRESS } from "./constants";
+import WorldNovelInterface from "../artifacts/contracts/WorldNovel.sol/WorldNovel.json";
+import { useContracts } from "./contract-context/contract-context";
 
 export default function Home() {
   return (

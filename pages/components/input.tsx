@@ -84,8 +84,8 @@ const ConfirmDialog = ({
       await transaction.wait();
     },
     {
-      onSuccess: () => {
-        queryClient.invalidateQueries("currentSentences");
+      onSuccess: async () => {
+        await queryClient.invalidateQueries("currentSentences");
         onConfirmed();
         onDismiss();
       },

@@ -51,7 +51,7 @@ contract BookManager {
     virtual
     returns (bool isLastSentence)
   {
-    require(bytes(text).length < MAX_SENTENCE_LENGTH, "TL");
+    require(bytes(text).length <= MAX_SENTENCE_LENGTH, "TL");
 
     Book storage currentBook = _books[_currentBookAddress];
     currentBook.sentences[_currentSentenceIndex] = Sentence(

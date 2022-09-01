@@ -1,7 +1,7 @@
-import { Dialog } from "@reach/dialog";
 import { ButtonHTMLAttributes, DetailedHTMLProps, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { useContracts } from "../contract-context/contract-context";
+import { Dialog } from "./dialog";
 
 const CHARACTER_LIMIT = 100; // Get this value from the contract on load
 
@@ -34,6 +34,7 @@ export const Input = () => {
       <ConfirmDialog
         text={text}
         isOpen={dialogOpen}
+        onConfirmed={() => setText("")}
         onDismiss={() => setDialogOpen(false)}
       />
     </>
@@ -49,7 +50,7 @@ const AddButton = (
   return (
     <button
       className="shrink-0 w-10 h-10 bg-purple-100 border-purple-500 border-2
-      rounded-full relative hover:rotate-6 ease-linear disabled:bg-gray-100 disabled:border-gray-500 disabled:rotate-0"
+      rounded-full relative disabled:bg-gray-100 disabled:border-gray-500"
       {...props}
     >
       <div className="absolute top-2 bottom-2 left-0 right-0 mx-auto w-0.5 rounded-sm bg-black" />
@@ -62,10 +63,12 @@ const ConfirmDialog = ({
   text,
   isOpen,
   onDismiss,
+  onConfirmed,
 }: {
   text: string;
   isOpen: boolean;
   onDismiss: VoidFunction;
+  onConfirmed: VoidFunction;
 }) => {
   const { worldNovel } = useContracts();
   const {
@@ -74,6 +77,7 @@ const ConfirmDialog = ({
     isError,
   } = useQuery("costToAddSentence", () => worldNovel.getCostToAddSentence());
   const queryClient = useQueryClient();
+
   const addSentenceMutation = useMutation(
     async () => {
       const transaction = await worldNovel.addSentence(text);
@@ -81,32 +85,23 @@ const ConfirmDialog = ({
     },
     {
       onSuccess: () => {
-        console.log("Success mutating");
         queryClient.invalidateQueries("currentSentences");
+        onConfirmed();
+        onDismiss();
       },
     }
   );
 
   const cost = `Cost: ${costToAddSentence} $NOVEL`;
 
-  const onSubmit = () => {
-    addSentenceMutation.mutate();
-    onDismiss();
-  };
-
   return (
-    <Dialog
-      className="rounded-xl my-[30vh]"
-      isOpen={isOpen}
-      onDismiss={onDismiss}
-      aria-label="Confirm input"
-    >
+    <Dialog isOpen={isOpen} onDismiss={onDismiss} aria-label="Confirm input">
       <div className="bg-amber-100 border-amber-500 border-2 rounded-xl p-4 mb-4">
         {text}
       </div>
       <button
         className="bg-purple-100 border-purple-500 border-2 rounded-xl py-1 px-4 mx-auto w-64 block"
-        onClick={onSubmit}
+        onClick={() => addSentenceMutation.mutate()}
       >
         <h1 className="text-2xl text-center">Submit</h1>
         <p>{cost}</p>
